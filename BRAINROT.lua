@@ -1,25 +1,31 @@
-local Flux = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/fluxlib.txt"))()
+local SolarisLib = loadstring(game:HttpGet("https://solarishub.dev/SolarisLib.lua"))()
 
-local win = Flux:Window("Ryo-Ask HubX", "Steal Brainrot", Color3.fromRGB(255, 110, 48), Enum.KeyCode.LeftControl)
-local tab = win:Tab("Helpes", "http://www.roblox.com/asset/?id=6023426915")
+local win = SolarisLib:New({
+    Name = "Ryo-Ask HubX",
+    FolderToSave = "RyoAskHubStuff"
+})
+
+-- Cria a aba "Helpes"
+local tab = win:Tab("Helpes")
+
+-- Cria uma seção para os elementos
+local sec = tab:Section("Recursos Úteis")
 
 ---
--- Funções da UI
+-- WalkSpeed Toggle
 ---
-
--- WalkSpeed Toggle (Substitui o Slider)
 local isFastWalkActive = false
-local defaultWalkSpeed = 16 -- Velocidade padrão do Roblox
+local defaultWalkSpeed = 16
 
-tab:Toggle("Fast Walk", false, function(state)
+sec:Toggle("Fast Walk", false, "FastWalkToggle", function(state)
     isFastWalkActive = state
     local player = game.Players.LocalPlayer
     if player and player.Character and player.Character:FindFirstChild("Humanoid") then
         local humanoid = player.Character.Humanoid
         if state then
-            humanoid.WalkSpeed = 100 -- Define a velocidade para 100 quando ativo
+            humanoid.WalkSpeed = 100
         else
-            humanoid.WalkSpeed = defaultWalkSpeed -- Volta para o padrão quando desativado
+            humanoid.WalkSpeed = defaultWalkSpeed
         end
     end
 end)
@@ -33,10 +39,12 @@ game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
     end
 end)
 
+---
 -- Inf Jump Toggle
+---
 local isInfJumpActive = false
 
-tab:Toggle("Inf Jump", false, function(state)
+sec:Toggle("Inf Jump", false, "InfJumpToggle", function(state)
     isInfJumpActive = state
 end)
 
@@ -49,10 +57,12 @@ game:GetService("RunService").Heartbeat:Connect(function()
     end
 end)
 
+---
 -- God Mode Toggle (Sem Hitbox)
+---
 local isGodModeActive = false
 
-tab:Toggle("God Mode", false, function(state)
+sec:Toggle("God Mode", false, "GodModeToggle", function(state)
     isGodModeActive = state
 end)
 
@@ -67,7 +77,7 @@ game:GetService("RunService").Heartbeat:Connect(function()
             end
         else
             for _, part in ipairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then -- Evita que a parte principal fique sem colisão
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
                     pcall(function()
                         part.CanCollide = true
                     end)
@@ -77,7 +87,9 @@ game:GetService("RunService").Heartbeat:Connect(function()
     end
 end)
 
+---
 -- ESP com Highlight e Nomes
+---
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -161,7 +173,8 @@ end)
 
 Players.PlayerRemoving:Connect(removePlayerESP)
 
-tab:Colorpicker("ESP Color", Color3.fromRGB(150, 200, 255), function(color)
+-- Adiciona o Colorpicker na seção
+sec:Colorpicker("ESP Color", Color3.fromRGB(150, 200, 255), "ESPColor", function(color)
     updateAllPlayersESP(color)
 end)
 
