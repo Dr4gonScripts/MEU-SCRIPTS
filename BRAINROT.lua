@@ -4,24 +4,36 @@ local win = Flux:Window("Ryo-Ask HubX", "Steal Brainrot", Color3.fromRGB(255, 11
 local tab = win:Tab("Helpes", "http://www.roblox.com/asset/?id=6023426915")
 
 ---
--- Slider de WalkSpeed (Baixo Risco)
+-- Funções da UI
 ---
--- Use a função de callback diretamente no slider
-local slider = tab:Slider("WalkSpeed", 16, 100, 16, function(value)
+
+-- WalkSpeed Toggle (Substitui o Slider)
+local isFastWalkActive = false
+local defaultWalkSpeed = 16 -- Velocidade padrão do Roblox
+
+tab:Toggle("Fast Walk", false, function(state)
+    isFastWalkActive = state
     local player = game.Players.LocalPlayer
     if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = value
+        local humanoid = player.Character.Humanoid
+        if state then
+            humanoid.WalkSpeed = 100 -- Define a velocidade para 100 quando ativo
+        else
+            humanoid.WalkSpeed = defaultWalkSpeed -- Volta para o padrão quando desativado
+        end
     end
 end)
 
--- Melhora a WalkSpeed para funcionar após a morte
+-- Garante que a velocidade seja restaurada após a morte
 game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
-    character:WaitForChild("Humanoid").WalkSpeed = slider.Value
+    if isFastWalkActive then
+        character:WaitForChild("Humanoid").WalkSpeed = 100
+    else
+        character:WaitForChild("Humanoid").WalkSpeed = defaultWalkSpeed
+    end
 end)
 
----
 -- Inf Jump Toggle
----
 local isInfJumpActive = false
 
 tab:Toggle("Inf Jump", false, function(state)
@@ -37,9 +49,7 @@ game:GetService("RunService").Heartbeat:Connect(function()
     end
 end)
 
----
 -- God Mode Toggle (Sem Hitbox)
----
 local isGodModeActive = false
 
 tab:Toggle("God Mode", false, function(state)
@@ -50,16 +60,14 @@ game:GetService("RunService").Heartbeat:Connect(function()
     local player = game.Players.LocalPlayer
     if player and player.Character then
         if isGodModeActive then
-            -- Desativa a colisão quando o God Mode está ativo
             for _, part in ipairs(player.Character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     part.CanCollide = false
                 end
             end
         else
-            -- Restaura a colisão quando o God Mode está desativado
             for _, part in ipairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then -- Evita que a parte principal fique sem colisão
                     pcall(function()
                         part.CanCollide = true
                     end)
@@ -69,9 +77,7 @@ game:GetService("RunService").Heartbeat:Connect(function()
     end
 end)
 
----
 -- ESP com Highlight e Nomes
----
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
