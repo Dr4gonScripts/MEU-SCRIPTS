@@ -4,16 +4,19 @@ local win = Flux:Window("Ryo-Ask HubX", "Steal Brainrot", Color3.fromRGB(255, 11
 local tab = win:Tab("Helpes", "http://www.roblox.com/asset/?id=6023426915")
 
 ---
--- Slider de WalkSpeed
+-- Slider de WalkSpeed (Baixo Risco)
 ---
-local slider = tab:Slider("WalkSpeed", 16, 100, 16)
-
-slider.Changed:Connect(function(value)
+-- Use a função de callback diretamente no slider
+local slider = tab:Slider("WalkSpeed", 16, 100, 16, function(value)
     local player = game.Players.LocalPlayer
     if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-        local humanoid = player.Character.Humanoid
-        humanoid.WalkSpeed = value
+        player.Character.Humanoid.WalkSpeed = value
     end
+end)
+
+-- Melhora a WalkSpeed para funcionar após a morte
+game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid").WalkSpeed = slider.Value
 end)
 
 ---
