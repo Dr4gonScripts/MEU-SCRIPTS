@@ -1,189 +1,175 @@
-local SolarisLib = loadstring(game:HttpGet("https://solarishub.dev/SolarisLib.lua"))()
+-- Carrega a biblioteca
+local Ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/Abyss%20Lib/Abyss%20Lib%20Source.lua"))()
+local Ui = Library
 
-local win = SolarisLib:New({
-    Name = "Ryo-Ask HubX",
-    FolderToSave = "RyoAskHubStuff"
+-- Mede o tempo de carregamento
+local LoadTime = tick()
+
+local Loader = Library.CreateLoader(
+    "Ryo-Ask Hub Carregando",
+    Vector2.new(300, 300)
+)
+
+local Window = Library.Window(
+    "RYO-ASK HUB",
+    Vector2.new(500, 620)
+)
+
+-- Notificação inicial
+Window.SendNotification(
+    "Normal",
+    "Press RightShift to open menu and close menu!",
+    10
+)
+
+-- Marca d'água
+Window.Watermark("Ryo-ASK")
+
+-- Cria a primeira aba
+local Tab1 = Window:Tab("Home")
+
+-- Seção de Ajudas
+local Section1 = Tab1:Section("Ajudas - Helps", "Left")
+
+-- WalkSpeed Slider
+Section1:Slider({
+    Title = "Walk Speed", 
+    Flag = "WalkSpeed_Slider", 
+    Symbol = " studs",
+    Default = 16,
+    Min = 16,
+    Max = 80,
+    Decimals = 0,
+    Callback = function(value)
+        local player = game:GetService("Players").LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        
+        if character and character:FindFirstChildOfClass("Humanoid") then
+            character.Humanoid.WalkSpeed = value
+        end
+        print("WalkSpeed definido para: "..value.." studs")
+    end
 })
 
--- Cria a aba "Helpes"
-local tab = win:Tab("Helpes")
+-- GodMode Toggle
+local godModeConnection = nil
+Section1:Toggle({
+    Title = "GodMode - Intangível", 
+    Flag = "GodMode_Toggle",
+    Callback = function(state)
+        local player = game:GetService("Players").LocalPlayer
+        
+        local function setGodMode(character)
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                if state then
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                    humanoid.MaxHealth = math.huge
+                    humanoid.Health = math.huge
+                else
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
+                    humanoid.MaxHealth = 100
+                    humanoid.Health = 100
+                end
+            end
+        end
 
--- Cria uma seção para os elementos
-local sec = tab:Section("Recursos Úteis")
-
----
--- WalkSpeed Toggle
----
-local isFastWalkActive = false
-local defaultWalkSpeed = 16
-
-sec:Toggle("Fast Walk", false, "FastWalkToggle", function(state)
-    isFastWalkActive = state
-    local player = game.Players.LocalPlayer
-    if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-        local humanoid = player.Character.Humanoid
         if state then
-            humanoid.WalkSpeed = 100
-        else
-            humanoid.WalkSpeed = defaultWalkSpeed
-        end
-    end
-end)
-
--- Garante que a velocidade seja restaurada após a morte
-game.Players.LocalPlayer.CharacterAdded:Connect(function(character)
-    if isFastWalkActive then
-        character:WaitForChild("Humanoid").WalkSpeed = 100
-    else
-        character:WaitForChild("Humanoid").WalkSpeed = defaultWalkSpeed
-    end
-end)
-
----
--- Inf Jump Toggle
----
-local isInfJumpActive = false
-
-sec:Toggle("Inf Jump", false, "InfJumpToggle", function(state)
-    isInfJumpActive = state
-end)
-
-game:GetService("RunService").Heartbeat:Connect(function()
-    if isInfJumpActive then
-        local player = game.Players.LocalPlayer
-        if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
----
--- God Mode Toggle (Sem Hitbox)
----
-local isGodModeActive = false
-
-sec:Toggle("God Mode", false, "GodModeToggle", function(state)
-    isGodModeActive = state
-end)
-
-game:GetService("RunService").Heartbeat:Connect(function()
-    local player = game.Players.LocalPlayer
-    if player and player.Character then
-        if isGodModeActive then
-            for _, part in ipairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                end
+            if player.Character then
+                setGodMode(player.Character)
             end
+            
+            godModeConnection = player.CharacterAdded:Connect(function(newCharacter)
+                setGodMode(newCharacter)
+            end)
+            
+            Window.SendNotification("Normal", "GodMode ATIVADO", 3)
+            print("GodMode ativado - Personagem intangível")
         else
-            for _, part in ipairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                    pcall(function()
-                        part.CanCollide = true
-                    end)
-                end
+            if godModeConnection then
+                godModeConnection:Disconnect()
+                godModeConnection = nil
             end
+            
+            if player.Character then
+                setGodMode(player.Character)
+            end
+            
+            Window.SendNotification("Normal", "GodMode DESATIVADO", 3)
+            print("GodMode desativado")
         end
     end
-end)
+})
 
----
--- ESP com Highlight e Nomes
----
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+-- Seção Steal
+local Section2 = Tab1:Section("Steal", "Right")
 
-local highlights = {}
-local nameTags = {}
-
-local function createNameTag(player)
-    local tag = Instance.new("BillboardGui")
-    tag.Name = "ESP_NameTag"
-    tag.AlwaysOnTop = true
-    tag.Size = UDim2.new(4, 0, 1, 0)
-    tag.StudsOffset = Vector3.new(0, 3, 0)
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "NameLabel"
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextScaled = true
-    nameLabel.TextStrokeTransparency = 0
-    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    nameLabel.Text = player.Name
-    nameLabel.Parent = tag
-    if player.Character and player.Character:FindFirstChild("Head") then
-        tag.Parent = player.Character.Head
-        nameTags[player] = tag
-    end
-end
-
-local function createHighlight(player, color)
-    local highlight = Instance.new("Highlight")
-    highlight.FillColor = color
-    highlight.FillTransparency = 0.5
-    highlight.OutlineColor = color
-    highlight.OutlineTransparency = 0
-    highlight.Adornee = player.Character
-    highlight.Parent = player.Character
-    highlights[player] = highlight
-end
-
-local function updatePlayerESP(player, color)
-    local char = player.Character
-    if char and player ~= LocalPlayer then
-        if highlights[player] then
-            highlights[player].FillColor = color
-            highlights[player].OutlineColor = color
+-- Infinite Jump Toggle
+local infJumpConnection = nil
+Section2:Toggle({
+    Title = "Infinite Jump", 
+    Flag = "Infinite_Jump_Toggle",
+    Callback = function(state)
+        if state then
+            infJumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+                local player = game:GetService("Players").LocalPlayer
+                local character = player.Character
+                if character then
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end)
+            Window.SendNotification("Normal", "Infinite Jump ATIVADO", 3)
+            print("Infinite Jump ativado")
         else
-            createHighlight(player, color)
+            if infJumpConnection then
+                infJumpConnection:Disconnect()
+                infJumpConnection = nil
+            end
+            Window.SendNotification("Normal", "Infinite Jump DESATIVADO", 3)
+            print("Infinite Jump desativado")
         end
-        if not nameTags[player] and char:FindFirstChild("Head") then
-            createNameTag(player)
-        end
+    end
+})
+
+-- Adiciona Keybind para o Infinite Jump
+Section2:GetToggle("Infinite_Jump_Toggle"):Keybind({
+    Title = "Atalho Infinite Jump",
+    Flag = "Infinite_Jump_Keybind",
+    Key = Enum.KeyCode.J,
+    StateType = "Toggle"
+})
+
+-- Adiciona a aba de configurações
+Window:AddSettingsTab()
+
+-- Define a aba inicial
+Window:SwitchTab(Tab1)
+
+-- Desativa animações
+Window.ToggleAnime(false)
+
+-- Finaliza o carregamento
+LoadTime = math.floor((tick() - LoadTime) * 1000
+print(string.format("Ryo-Ask Hub carregado em %d ms", LoadTime))
+
+-- Função para desconectar tudo quando o script for encerrado
+local function cleanup()
+    if godModeConnection then
+        godModeConnection:Disconnect()
+    end
+    if infJumpConnection then
+        infJumpConnection:Disconnect()
     end
 end
 
-local function removePlayerESP(player)
-    if highlights[player] then
-        highlights[player]:Destroy()
-        highlights[player] = nil
-    end
-    if nameTags[player] then
-        nameTags[player]:Destroy()
-        nameTags[player] = nil
-    end
-end
+-- Conecta o cleanup para quando o script for destruído
+game:GetService("Players").LocalPlayer.CharacterRemoving:Connect(cleanup)
+game:GetService("Players").LocalPlayer.PlayerGui.ChildRemoved:Connect(cleanup)
 
-local function updateAllPlayersESP(color)
-    for _, player in Players:GetPlayers() do
-        if player.Character and player ~= LocalPlayer then
-            updatePlayerESP(player, color)
-        end
-    end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(character)
-        updatePlayerESP(player, Color3.fromRGB(150, 200, 255))
-    end)
-end)
-
-Players.PlayerRemoving:Connect(removePlayerESP)
-
--- Adiciona o Colorpicker na seção
-sec:Colorpicker("ESP Color", Color3.fromRGB(150, 200, 255), "ESPColor", function(color)
-    updateAllPlayersESP(color)
-end)
-
-RunService.Heartbeat:Connect(function()
-    for _, player in Players:GetPlayers() do
-        if player.Character and player.Character:FindFirstChild("Head") and not highlights[player] and player ~= LocalPlayer then
-            updatePlayerESP(player, Color3.fromRGB(150, 200, 255))
-        end
-    end
-end)
-
-updateAllPlayersESP(Color3.fromRGB(150, 200, 255))
+return {
+    Cleanup = cleanup,
+    Window = Window
+}
